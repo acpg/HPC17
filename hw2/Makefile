@@ -1,6 +1,6 @@
 CC=clang-omp
 FLAGS=-O3 -fopenmp -Wall
-EXECS=omp2 omp3 omp4 omp5 omp6
+EXECS=omp2 omp3 omp4 omp5 omp6 jb gs
 
 all: ${EXECS}
 
@@ -18,6 +18,12 @@ omp5: omp_solved5.c
 
 omp6: omp_solved6.c
 	${CC} ${FLAGS} omp_solved6.c -o omp_solved6
+
+jb: jacobi2D-omp.c
+	${CC} ${FLAGS} jacobi2D-omp.c -o jacobi2D-omp
+
+gs: gs2D-omp.c
+	${CC} ${FLAGS} gs2D-omp.c -o gs2D-omp
 
 clean:
 	rm -f ${EXECS}
