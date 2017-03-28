@@ -42,4 +42,3 @@ sum = 0.0;
 printf("Sum = %f\n",sum);
 
 }
-
