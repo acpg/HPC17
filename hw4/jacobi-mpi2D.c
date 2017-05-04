@@ -9,13 +9,12 @@ used code from Georg Stadler
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "util.h"
 #include "mpi.h"
 
 int main (int argc, char **argv)
 {
 	int p, k, i, j, nj, nl, n2, k_max;
-	double h, *u, *u0;
+	double h, *u, *u0, start, end;
 
 	if(argc != 2) {
 		fprintf(stderr, "Function needs vector size as input argument!\n");
@@ -32,6 +31,7 @@ int main (int argc, char **argv)
 	MPI_Status status;
 	MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
 	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+	start = MPI_Wtime();
 
 	printf ("MPI task %d has started...\n", rank);
 	p = numtasks;
@@ -161,6 +161,12 @@ int main (int argc, char **argv)
 	}
 
 	printf("Jacobi done in %ld iterations. \n",k);
-
+	/* time it */
+	MPI_Barrier(MPI_COMM_WORLD);
+	end = MPI_Wtime();
+	if(0==rank)
+		printf("Runtime = %f\n", end-start);
+	free(u);
+	free(u0);
 	MPI_Finalize();
 }

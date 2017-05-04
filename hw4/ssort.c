@@ -1,4 +1,7 @@
 /* Parallel sample sort
+Ana C. Perez-Gea
+High Performance Computing
+Used code from Greog Stadler
  */
 #include <stdio.h>
 #include <unistd.h>
@@ -24,14 +27,15 @@ int main( int argc, char *argv[])
   int rank, numtasks;
   int i, N, NN;
   int *vec, *svec, *svec0, *ivec, *ivecn, *rivec, *rivecn;
+  double start, end;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
+  start = MPI_Wtime();
 
-  /* Number of random numbers per processor (this should be increased
-   * for actual tests or could be passed in through the command line */
-  N = 100;
+  /* Number of random numbers per processor */
+  N = atoi(argv[1]);
 
   vec = calloc(N, sizeof(int));
   /* seed random number generator differently on every core */
@@ -90,10 +94,9 @@ int main( int argc, char *argv[])
     //printf("Rank %d offset %d w %d elements\n",rank,ivec[i],ivecn[i]);
   }
 
-  /* send and receive: either you use MPI_AlltoallV, or
-   * (and that might be easier), use an MPI_Alltoall to share
+  /* send and receive: either use an MPI_Alltoall to share
    * with every processor how many integers it should expect,
-   * and then use MPI_Send and MPI_Recv to exchange the data */
+   * and then use MPI_Alltoallv to exchange the data */
   
   rivecn = (int *)malloc(numtasks*sizeof(int));
   MPI_Alltoall(ivecn, 1, MPI_INT, rivecn, 1, MPI_INT, MPI_COMM_WORLD);
@@ -113,6 +116,12 @@ int main( int argc, char *argv[])
 
   /* do a local sort */
   qsort(svec0, NN, sizeof(int), compare);
+
+  /* time it */
+  MPI_Barrier(MPI_COMM_WORLD);
+  end = MPI_Wtime();
+  if(rank==0)
+    printf("Runtime = %f\n", end-start);
 
   /* every processor writes its result to a file */
   {

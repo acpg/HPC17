@@ -1,0 +1,8 @@
+ssort Stampede timings
+64 cores, N numbers per core
+
+log_10(N)   time (s)
+--------------------
+5	0.137114
+6	0.168754
+7	3.216144
