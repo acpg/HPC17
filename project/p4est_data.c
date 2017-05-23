@@ -3,9 +3,6 @@ Datatree
 Ana C. Perez-Gea
 Code adapted from p4est example file p4est_step1.c
 */
-
-/* p4est_to_p8est.h #define's the 2D names to the 3D names such that most code
- * only needs to be written once. */
 #ifndef P4_TO_P8
 #include <p4est_vtk.h>
 #else
@@ -16,31 +13,27 @@ Code adapted from p4est example file p4est_step1.c
 static const p4est_qcoord_t eighth = P4EST_QUADRANT_LEN (3);
 #endif
 
+/* Parameters to adjust */
+#define max_pow0 7 // no deeper than this level (power of 2)
+int max_size = 500; // keep splitting if we have more than this many data points
+int data_base = 1000; // data point power base (for simulating data)
+int max_data = 10000000; //max points to simulate, adjust so it covers all your points
+
+/* Parameters not to touch */
 float *array, *cols, *rows, max_col, min_col, max_row, min_row;
 int count = 0; // actual number read from file
-int max_size = 15; // keep splitting if we have more than this many data points
-int dmult = 1000; // data point multiplier (for simulating data)
-int max_data = 10000000; //max points to read from file
-int max_level = 10; // no deeper than this level
+#define max_quad0 (1<<max_pow0)
+static const int max_pow = max_pow0;
+static const int max_quad = max_quad0; 
 
-/** Callback function to decide on refinement.
- *
- * Refinement and coarsening is controlled by callback functions.
- * This function is called for every processor-local quadrant in order; its
- * return value is understood as a boolean refinement flag.
- */
-static int refine_fn (p4est_t * p4est, p4est_topidx_t which_tree, p4est_quadrant_t * quadrant)
-{
-  int                 tilelen, inside;
-  int                 offsi, offsj;
-  int                 i, j;
-  float dx, dy;
-
-  /* The connectivity chosen in main () only consists of one tree. */
-  P4EST_ASSERT (which_tree == 0);
+/** Callback function to decide on refinement. */
+static int refine_fn (p4est_t * p4est, p4est_topidx_t which_tree, p4est_quadrant_t * quadrant){
+  int tilelen, inside, ql;
+  int i, j, offsi, offsj;
+  float dx, dy, qx, qy;
 
   /* We do not want to refine deeper than a given maximum level. */
-  if (quadrant->level > max_level) {
+  if (quadrant->level > max_pow) {
     return 0;
   }
   #ifdef P4_TO_P8
@@ -50,20 +43,27 @@ static int refine_fn (p4est_t * p4est, p4est_topidx_t which_tree, p4est_quadrant
   }
   #endif
 
-  inside=0;
-  //printf("quadrant level:%d\n", quadrant->level);
-  //printf("quadrant x:%f\n", quadrant->x);
-  //printf("quadrant y:%f\n", quadrant->y);
+  inside = 0;
+  qx = quadrant->x;
+  qy = quadrant->y;
+  ql = quadrant->level;
+  offsi = quadrant->x / P4EST_QUADRANT_LEN (max_pow);
+  offsj = quadrant->y / P4EST_QUADRANT_LEN (max_pow);
+  qx = (float)offsi / (float)max_quad;
+  qy = (float)offsj / (float)max_quad;
   for(i=0; i<count; i++){
-    //printf("rows[%d]=%f\n", i, rows[i]);
-    //printf("cols[%d]=%f\n", i, cols[i]);
-    //printf("cond %f\n", (max_row-min_row)/(float)(quadrant->level+1));
     dx = (rows[i]-min_row) / (max_row-min_row);
     dy = (cols[i]-min_col) / (max_col-min_col);
-    if(quadrant->x<dx && dx<quadrant->x+1.0/(float)(quadrant->level+1)){
-      if(quadrant->y<dy && dy<quadrant->y+1.0/(float)(quadrant->level+1)){
+    //printf("dx in rows[%d]=%f\n", i, dx);
+    //printf("dy in cols[%d]=%f\n", i, dy);
+    if(qx<dx && dx<(qx+1.0/(float)(ql+1))){
+      //printf("condition in rows < %f + %f\n", qx,1.0/(float)(ql+1));
+      if(qy<dy && dy<(qy+1.0/(float)(ql+1))){
+        //printf("condition in cols < %f + %f\n", qy,1.0/(float)(ql+1));
         inside++;
         if(inside > max_size){
+          //printf("WIN rows[%d]=%f\n", i, rows[i]);
+          //printf("WIN cols[%d]=%f\n", i, cols[i]);
           return 1;
         }
       }
@@ -72,18 +72,14 @@ static int refine_fn (p4est_t * p4est, p4est_topidx_t which_tree, p4est_quadrant
   return 0;
 }
 
-/** The main function of the step1 example program.
- *
- * It creates a connectivity and forest, refines it, and writes a VTK file.
- */
-int
-main (int argc, char **argv)
-{
+/* Main function creates a connectivity and forest, refines it, and writes a VTK file. */
+int main (int argc, char **argv) {
   int                 mpiret, i;
   int                 recursive, partforcoarsen, balance;
   sc_MPI_Comm         mpicomm;
   p4est_t            *p4est;
   p4est_connectivity_t *conn;
+  double t1, t2; 
 
   /* Open file we will use to simulate data points */
   FILE *fp;
@@ -97,7 +93,7 @@ main (int argc, char **argv)
   row = col = 0;
   while(EOF!=(inc=fscanf(fp,"%f%c", &data, &ch)) && inc == 2){
       //array[count] = data;
-      for(i=0;i<(int)(data*dmult);i++){
+      for(i=0;i<(int)pow(data_base,(0.6549-data));i++){
         u1 = (float)rand() / (float)RAND_MAX ;
         rows[count] = row+u1;
         if(rows[count]<min_row || 0==count){
@@ -135,7 +131,7 @@ main (int argc, char **argv)
   printf("Max row: %f\n", max_row);
   printf("Min col: %f\n", min_col);
   printf("Max col: %f\n", max_col);
-  printf("Data points: %d\n", count);
+  printf("Total points: %d\n", count);
 
   /* Initialize MPI */
   mpiret = sc_MPI_Init (&argc, &argv);
@@ -144,6 +140,7 @@ main (int argc, char **argv)
   // Get the rank of the process
   int world_rank;
   sc_MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  t1 = sc_MPI_Wtime();
 
   /* Store the MPI rank as a static variable so subsequent global p4est log messages are only issued from processor zero.  */
   sc_init (mpicomm, 1, 1, NULL, SC_LP_ESSENTIAL);
@@ -185,6 +182,9 @@ main (int argc, char **argv)
 
   /* Verify that allocations internal to p4est and sc do not leak memory. */
   sc_finalize ();
+
+  t2 = sc_MPI_Wtime(); 
+  printf( "Elapsed time is %f\n", t2 - t1 ); 
 
   /* This is standard MPI programs.  Without --enable-mpi, this is a dummy. */
   mpiret = sc_MPI_Finalize ();
