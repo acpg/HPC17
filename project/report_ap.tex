@@ -48,22 +48,22 @@ I simulated the data using a file of the NYU logo as seen in Figure \ref{nyu_log
 
 \section{p4est}
 
-The package p4est does all the handling of the splitting of the quadtrees and octrees for us. I took the example file p4est\_step1.c and modified it for my purposes. In particular, it has a function that defines the condition for splitting. This function is a boolean that, if we have more than a certain number of points in a quadrant, it will return 1.
+The package p4est does all the handling of the splitting of the quadtrees and octrees for us. I took the example file p4est\_step1.c and modified it for my purposes. In particular, it has a function that defines the condition for splitting. This function is a boolean that, if we have more than a certain number of points in a quadrant, will return 1.
 
 \section{Quadtree}
 
-I first implemented the 2-dimensional case. In table \ref{data} we can see the minimum and maximum row and column values as well as the total number of points generated for a single run. Since a positive noise was added to the row and column values, we can see that the values go a little above zero or the number of rows and columns. The minimum column value starts at a little over four because there are no points to be simulated in the first four columns.
+I first implemented the 2-dimensional case. In table \ref{data} we can see the minimum and maximum row and column values as well as the total number of points generated for a single run. Since positive noise was added to the row and column values, we can see that the values go a little over zero or the number of rows and columns corresponding to the minimums and maximums respectively.
 
 \begin{table}
 \centering
 \caption{Data}
 \label{data}
 \begin{tabular}{rl}
-Min row: & 0.000008\\
-Max row: & 139.999893\\
-Min col: & 4.048210\\
-Max col: & 155.932297\\
-Total points: & 869993
+Min row:& 0.000008\\
+Max row:& 397.999939\\
+Min col:& 0.000289\\
+Max col:& 406.000000\\
+Total points: & 8001102
 \end{tabular}
 \end{table}
 

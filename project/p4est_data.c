@@ -14,9 +14,8 @@ static const p4est_qcoord_t eighth = P4EST_QUADRANT_LEN (3);
 #endif
 
 /* Parameters to adjust */
-#define max_pow0 7 // no deeper than this level (power of 2)
-int max_size = 500; // keep splitting if we have more than this many data points
-int data_base = 1000; // data point power base (for simulating data)
+#define max_pow0 6 // no deeper than this level (power of 2)
+int max_size; // keep splitting if we have more than this many data points
 int max_data = 10000000; //max points to simulate, adjust so it covers all your points
 
 /* Parameters not to touch */
@@ -74,10 +73,10 @@ static int refine_fn (p4est_t * p4est, p4est_topidx_t which_tree, p4est_quadrant
 
 /* Main function creates a connectivity and forest, refines it, and writes a VTK file. */
 int main (int argc, char **argv) {
-  int                 mpiret, i;
-  int                 recursive, partforcoarsen, balance;
-  sc_MPI_Comm         mpicomm;
-  p4est_t            *p4est;
+  int mpiret, i;
+  int recursive, partforcoarsen, balance;
+  sc_MPI_Comm  mpicomm;
+  p4est_t *p4est;
   p4est_connectivity_t *conn;
   double t1, t2; 
 
@@ -89,11 +88,11 @@ int main (int argc, char **argv) {
   //array = (float*)malloc(sizeof(float)*ple*ple);
   cols = (float*)malloc(sizeof(float)*max_data);
   rows = (float*)malloc(sizeof(float)*max_data);
-  fp = fopen("example/steps/logo.txt","r");
+  fp = fopen("example/steps/NYUlogo.txt","r");
   row = col = 0;
   while(EOF!=(inc=fscanf(fp,"%f%c", &data, &ch)) && inc == 2){
       //array[count] = data;
-      for(i=0;i<(int)pow(data_base,(0.6549-data));i++){
+      for(i=0;i<(int)data;i++){
         u1 = (float)rand() / (float)RAND_MAX ;
         rows[count] = row+u1;
         if(rows[count]<min_row || 0==count){
@@ -112,6 +111,7 @@ int main (int argc, char **argv) {
         }
         ++count;
         if(count==max_data){
+          printf("Maximum data reached.\n");
           goto exit;
         }
     }
@@ -131,7 +131,8 @@ int main (int argc, char **argv) {
   printf("Max row: %f\n", max_row);
   printf("Min col: %f\n", min_col);
   printf("Max col: %f\n", max_col);
-  printf("Total points: %d\n", count);
+  printf("Total points: %d with %d^2 maximum quadrants\n", count, max_quad);
+  max_size = (int) (count/max_quad);
 
   /* Initialize MPI */
   mpiret = sc_MPI_Init (&argc, &argv);
