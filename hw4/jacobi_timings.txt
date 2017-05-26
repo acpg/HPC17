@@ -1,7 +1,0 @@
-Jacobi Stampede timings
-on 64 MPI tasks on 64 cores 
-NlxNl points per core
-
-Nl	time (m)
-----------------------
-100	8
