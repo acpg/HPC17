@@ -1,18 +1,18 @@
-EXECS=multigrid_2d multigrid_2d_openmp multigrid_2d_mpi
+EXECS=multigrid_2D multigrid_openMP2D multigrid-mpi2D
 CC=gcc
 MPICC=mpicc
 FLAGS=-O3 -Wall -g -lm
 
 all: ${EXECS}
 
-multigrid_2d: multigrid_2d.c
-	${CC} ${FLAGS} $^ -o multigrid_2d
+multigrid_2D: multigrid_2D.c
+	${CC} ${FLAGS} $^ -o multigrid_2D
 
-multigrid_2d_openmp: multigrid_2d.c
-	clang-omp -O3 -fopenmp -Wall $^ -o multigrid_2d_openmp
+multigrid_openMP2D: multigrid_openMP2D.c
+	clang-omp -O3 -fopenmp -Wall $^ -o multigrid_openMP2D
 
-multigrid_2d_mpi: multigrid_2d.c
-	${MPICC} -DUSE_MPI $^ -o multigrid_2d_mpi
+multigrid-mpi2D: multigrid-mpi2D.c
+	${MPICC} -DUSE_MPI $^ -o multigrid-mpi2D
 
 clean:
 	rm -f ${EXECS}

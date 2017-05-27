@@ -4,12 +4,15 @@
  * ITER: max number of V-cycle iterations
  * S-STEPS: number of Jacobi smoothing steps; optional
  * Author: Georg Stadler, April 2017
- * 2D and parallel adaptation by Ana C. Perez-Gea
+ * 2d and parallel adaptation by Ana C. Perez-Gea
  */
 #include <stdio.h>
 #include <math.h>
 #include "util.h"
 #include <string.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 /* compuate norm of residual */
 double compute_norm(double *u, int N)
@@ -159,6 +162,9 @@ int main(int argc, char * argv[])
 
   for (iter = 0; iter < max_iters && res_norm/res0_norm > tol; iter++) {
     /* V-cycle: Coarsening */
+    #ifdef _OPENMP
+    #pragma omp parallel for
+    #endif
     for (l = 0; l < levels-1; ++l) {
       /* pre-smoothing and coarsen */
       jacobi(u[l], rhs[l], N[l], hsq[l], ssteps);
@@ -170,6 +176,9 @@ int main(int argc, char * argv[])
     jacobi(u[levels-1], rhs[levels-1], N[levels-1], hsq[levels-1], 50);
 
     /* V-cycle: Refine and correct */
+    #ifdef _OPENMP
+    #pragma omp parallel for
+    #endif
     for (l = levels-1; l > 0; --l) {
       /* refine and add to u */
       refine_and_add(u[l], u[l-1], N[l]);
