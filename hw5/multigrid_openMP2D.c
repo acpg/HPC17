@@ -121,6 +121,10 @@ int main(int argc, char * argv[])
   if (argc > 3)
     sscanf(argv[3], "%d", &ssteps);
 
+int omp_get_thread_num();
+	#pragma omp parallel
+  printf("Thread rank: %d\n", omp_get_thread_num());
+
   /* compute number of multigrid levels */
   levels = floor(log2(Nfine));
   printf("Multigrid Solve using V-cycles for -u'' = f on (0,1)\n");
